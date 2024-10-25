@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using blazorTickets.Data;
+using System.ComponentModel.DataAnnotations;
 
 namespace blazorTickets.Models
 {
@@ -15,9 +16,11 @@ namespace blazorTickets.Models
         public DateTime CreatedAt { get; set; }
         public DateTime? ResolvedAt { get; set; }
 
+        public virtual ApplicationUser CreatedBy { get; set; }
         public string CreatedById { get; set; }
         public string? CreatedByName { get; set; }
 
+        public virtual ApplicationUser ResolvedBy { get; set; }
         public string? ResolvedById { get; set; }
         public string? ResolvedByName { get; set; }
 
