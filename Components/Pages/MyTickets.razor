@@ -1,64 +1,147 @@
 ﻿@page "/my-tickets"
-@attribute [StreamRendering]
+@rendermode InteractiveServer
 
-<PageTitle>Weather</PageTitle>
+@using Microsoft.AspNetCore.Identity
+@using blazorTickets.Data
+@using blazorTickets.Services
+@using blazorTickets.Models
+@inject TicketService TicketService
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
-<h1>Weather</h1>
+<PageTitle>Counter</PageTitle>
 
-<p>This component demonstrates showing data.</p>
-
-@if (forecasts == null)
+<h3>Open Tickets</h3>
+@if (openTickets == null)
 {
-    <p><em>Loading...</em></p>
+    <p>Loading open tickets...</p>
+}
+else if (openTickets.Count == 0)
+{
+    <p>No open tickets available.</p>
 }
 else
 {
-    <table class="table">
+    <table class="table table-striped">
         <thead>
             <tr>
-                <th>Date</th>
-                <th>Temp. (C)</th>
-                <th>Temp. (F)</th>
-                <th>Summary</th>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Severity</th>
+                <th>Created At</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var forecast in forecasts)
+            @foreach (var ticket in openTickets)
             {
-                <tr>
-                    <td>@forecast.Date.ToShortDateString()</td>
-                    <td>@forecast.TemperatureC</td>
-                    <td>@forecast.TemperatureF</td>
-                    <td>@forecast.Summary</td>
+                <tr class="@GetSeverityClass(ticket.Severity)">
+                    <td>@ticket.Id</td>
+                    <td class="ticket-title">@ticket.Title</td>
+                    <td class="ticket-description">@ticket.Description</td>
+                    <td>@ticket.Severity</td>
+                    <td>@ticket.CreatedAt.ToString("dd-MM-yyyy")</td>
                 </tr>
             }
         </tbody>
     </table>
 }
 
+<h3>Closed Tickets</h3>
+@if (closedTickets == null)
+{
+    <p>Loading closed tickets...</p>
+}
+else if (closedTickets.Count == 0)
+{
+    <p>No open tickets available.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Severity</th>
+                <th>Created At</th>
+                <th>Resolved At</th>
+                <th>Resolved By</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ticket in closedTickets)
+            {
+                <tr class="@GetSeverityClass(ticket.Severity)">
+                    <td>@ticket.Id</td>
+                    <td>@ticket.Title</td>
+                    <td class="ticket-description">@ticket.Description</td>
+                    <td>@ticket.Severity</td>
+                    <td>@ticket.CreatedAt.ToString("dd-MM-yyyy")</td>
+                    <td>@ticket.ResolvedAt?.ToString("dd-MM-yyyy")</td>
+                    <td>@ticket.ResolvedByName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<style>
+    .ticket-title{
+        max-width: 4rem;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+    .ticket-description {
+        max-width: 5rem;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+    tr{
+        font-size: 0.8rem;
+        text-align: center;
+    }
+</style>
+
 @code {
-    private WeatherForecast[]? forecasts;
+    private List<Ticket> openTickets;
+    private List<Ticket> closedTickets;
 
     protected override async Task OnInitializedAsync()
     {
-        // Simulate asynchronous loading to demonstrate streaming rendering
-        await Task.Delay(500);
-
-        var startDate = DateOnly.FromDateTime(DateTime.Now);
-        var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
-        forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState == null)
         {
-            Date = startDate.AddDays(index),
-            TemperatureC = Random.Shared.Next(-20, 55),
-            Summary = summaries[Random.Shared.Next(summaries.Length)]
-        }).ToArray();
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        var user = authState?.User;
+        if (user == null || user.Identity == null || user.Identity.IsAuthenticated == false)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        var appUser = await UserManager.GetUserAsync(user);
+        if (appUser == null)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        openTickets = await TicketService.GetUserOpenTicketsAsync(appUser);
+        closedTickets = await TicketService.GetUserClosedTicketsAsync(appUser);
     }
 
-    private class WeatherForecast
+    private string GetSeverityClass(string severity)
     {
-        public DateOnly Date { get; set; }
-        public int TemperatureC { get; set; }
-        public string? Summary { get; set; }
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+        return severity switch
+        {
+            "Low" => "table-success",
+            "Medium" => "table-warning",
+            "Critical" => "table-danger",
+            "High" => "",
+            "" => ""
+        };
     }
 }
