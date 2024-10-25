@@ -21,9 +21,6 @@ namespace Models
         public string? ResolvedById { get; set; }
         public string? ResolvedByName { get; set; }
 
-        public Ticket()
-        {
-
-        }
+        public Ticket() { }
     }
 }
