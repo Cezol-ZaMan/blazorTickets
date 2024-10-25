@@ -2,9 +2,9 @@
 using Microsoft.Extensions.Options;
 using MimeKit;
 using MailKit.Net.Smtp;
-using Models;
+using blazorTickets.Models;
 
-namespace Services
+namespace blazorTickets.Services
 {
     public class EmailSender : IEmailSender
     {
