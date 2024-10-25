@@ -1,4 +1,4 @@
-﻿namespace blazorTickets.Models
+﻿namespace Models
 {
     public class SmtpSettings
     {
