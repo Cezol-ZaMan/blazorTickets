@@ -1,0 +1,51 @@
+# Ignore build outputs
+bin/
+obj/
+
+# Ignore build artifacts of the .NET project system
+*.dbmdl
+*.dbproj
+*.pdb
+*.log
+*.cache
+*.temp
+*.tmp
+*.bak
+
+# User-specific files
+.vscode/
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Config and environment files
+appsettings*.json
+secrets.json
+.env
+
+# Ignore Rider and JetBrains files
+*.sln.iml
+*.DotSettings.user
+.idea/
+
+# Ignore dependencies
+libman.json
+node_modules/
+npm-debug.log*
+yarn-error.log
+
+# Publish outputs
+wwwroot/dist/
+wwwroot/css/
+wwwroot/js/
+wwwroot/lib/
+
+# Windows-specific files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
