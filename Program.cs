@@ -1,11 +1,14 @@
 using blazorTickets.Components;
 using blazorTickets.Components.Account;
 using blazorTickets.Data;
+using blazorTickets.Models;
+using blazorTickets.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
 
-static async Task CreateRoles(IServiceProvider serviceProvider)
+static async Task CreateRolesAsync(IServiceProvider serviceProvider)
 {
     var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -29,17 +32,25 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+var smtpSection = builder.Configuration.GetSection("Smtp") ?? throw new InvalidOperationException("SMTP configuration section is missing.");
+builder.Services.Configure<SmtpSettings>(smtpSection);
+builder.Services.AddTransient<IEmailSender, EmailSender>();
+
+builder.Services.AddScoped<TicketService>();
+builder.Services.AddScoped<EmailSender>();
+
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
+builder.Services.AddScoped<IdentityEmailSender>();
 
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+})
+    .AddEntityFrameworkStores<ApplicationDbContext>()
+    .AddDefaultTokenProviders();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -54,6 +65,12 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await CreateRolesAsync(services);   
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
