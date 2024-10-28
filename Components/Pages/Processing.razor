@@ -76,7 +76,7 @@ else
         openTickets = await TicketService.GetOpenTicketsAsync();
     }
 
-    private async void NavigateToTicketDetail(Ticket ticket)
+    private async Task NavigateToTicketDetail(Ticket ticket)
     {
         await sessionStorage.SetAsync("ticketDetail", ticket);
         NavigationManager.NavigateTo("/ticket-detail");
