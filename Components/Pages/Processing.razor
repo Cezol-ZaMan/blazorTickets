@@ -1,17 +1,18 @@
-﻿@page "/processing"
-@rendermode InteractiveServer
-
-@using Microsoft.AspNetCore.Authorization
+﻿@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using blazorTickets.Data
 @using blazorTickets.Services
 @using blazorTickets.Models
+
 @inject ProtectedSessionStorage sessionStorage
 @inject NavigationManager NavigationManager
 @inject TicketService TicketService
 
+@page "/processing"
+@rendermode InteractiveServer
 @attribute [Authorize(Roles = "Technician")]
+
 <PageTitle>Processing</PageTitle>
 
 <h1>Process Tickets</h1>

@@ -1,17 +1,18 @@
-﻿@page "/my-tickets"
-@rendermode InteractiveServer
-
-@using Microsoft.AspNetCore.Authorization
+﻿@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using blazorTickets.Data
 @using blazorTickets.Services
 @using blazorTickets.Models
+
 @inject TicketService TicketService
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
+@page "/my-tickets"
+@rendermode InteractiveServer
 @attribute [Authorize]
+
 <PageTitle>My Tickets</PageTitle>
 
 <h3>Open Tickets</h3>

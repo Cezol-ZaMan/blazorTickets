@@ -1,5 +1,4 @@
-﻿@page "/"
-@using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿@using Microsoft.AspNetCore.Mvc.RazorPages;
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.Extensions.Options
 @using blazorTickets.Data
@@ -8,6 +7,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.Authorization
 @using System.Transactions;
+
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
@@ -15,6 +15,8 @@
 @inject EmailSender EmailSender
 @inject IOptions<TechnicianEmailSettings> technicianEmails
 @inject TicketService TicketService
+
+@page "/"
 @rendermode InteractiveServer
 @attribute [Authorize]
 
