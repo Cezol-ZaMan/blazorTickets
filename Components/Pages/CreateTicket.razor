@@ -67,7 +67,7 @@
     private Ticket ticket = new Ticket();
     private ApplicationUser? User;
 
-    protected override async void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         if (authState == null)
