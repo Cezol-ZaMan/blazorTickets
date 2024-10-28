@@ -56,7 +56,8 @@ else
 
 @code {
     private Ticket? ticket;
-    private string resolutionMessage;
+    private ApplicationUser? User;
+    private string? resolutionMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,31 +79,18 @@ else
         {
             return;
         }
-        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        if (authState == null)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        var user = authState?.User;
-        if (user == null || user.Identity == null || user.Identity.IsAuthenticated == false)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        var appUser = await UserManager.GetUserAsync(user);
-        if (appUser == null)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
         if (ticket.IsClosed)
         {
             NavigationManager.NavigateTo("/processing");
             return;
         }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        User = await UserManager.GetUserAsync(authState.User);
+        
+        if (User == null) return;
+        
         string emailTo = ticket.CreatedByName;
-        string message = $"<p>Ticket <b>{ticket.Id}</b> was resolved by {appUser.Email}.<p>" +
+        string message = $"<p>Ticket <b>{ticket.Id}</b> was resolved by {User.Email}.<p>" +
                          $"<p><b>Title:</b><br/><i>{ticket.Title}</i></p>" +
                          $"<p><b>Description:</b><br/><i>{ticket.Description}</i></p>" +
                          $"<p><b>Resolution Message:</b><br/><i>{resolutionMessage}</i><p>";
@@ -111,8 +99,8 @@ else
         var dbTicket = await ctx.Tickets.FindAsync(ticket.Id);
         if (dbTicket != null)
         {
-            dbTicket.ResolvedByName = appUser.UserName;
-            dbTicket.ResolvedById = appUser.Id;
+            dbTicket.ResolvedByName = User.UserName;
+            dbTicket.ResolvedById = User.Id;
             dbTicket.IsClosed = true;
             dbTicket.ResolvedAt = DateTime.Now;
             await ctx.SaveChangesAsync();

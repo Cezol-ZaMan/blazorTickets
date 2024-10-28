@@ -1,6 +1,7 @@
 ﻿@page "/my-tickets"
 @rendermode InteractiveServer
 
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Identity
 @using blazorTickets.Data
 @using blazorTickets.Services
@@ -10,6 +11,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
+@attribute [Authorize]
 <PageTitle>My Tickets</PageTitle>
 
 <h3>Open Tickets</h3>
@@ -106,31 +108,16 @@ else
 </style>
 
 @code {
-    private List<Ticket> openTickets;
-    private List<Ticket> closedTickets;
+    private List<Ticket>? openTickets;
+    private List<Ticket>? closedTickets;
+    private ApplicationUser? User;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        if (authState == null)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        var user = authState?.User;
-        if (user == null || user.Identity == null || user.Identity.IsAuthenticated == false)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        var appUser = await UserManager.GetUserAsync(user);
-        if (appUser == null)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        openTickets = await TicketService.GetUserOpenTicketsAsync(appUser);
-        closedTickets = await TicketService.GetUserClosedTicketsAsync(appUser);
+        User = await UserManager.GetUserAsync(authState.User);
+        openTickets = await TicketService.GetUserOpenTicketsAsync(User);
+        closedTickets = await TicketService.GetUserClosedTicketsAsync(User);
     }
 
     private string GetSeverityClass(string severity)
@@ -140,8 +127,7 @@ else
             "Low" => "table-success",
             "Medium" => "table-warning",
             "Critical" => "table-danger",
-            "High" => "",
-            "" => ""
+            "High" => ""
         };
     }
 }

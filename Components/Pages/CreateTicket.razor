@@ -16,6 +16,7 @@
 @inject IOptions<TechnicianEmailSettings> technicianEmails
 @inject TicketService TicketService
 @rendermode InteractiveServer
+@attribute [Authorize]
 
 <PageTitle>Create Ticket</PageTitle>
 
@@ -70,24 +71,7 @@
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
-        if (authState == null)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        var user = authState?.User;
-        if (user == null || user.Identity == null || user.Identity.IsAuthenticated == false)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        var appUser = await UserManager.GetUserAsync(user);
-        if (appUser == null)
-        {
-            NavigationManager.NavigateTo("/Account/Login");
-            return;
-        }
-        User = appUser;
+        User = await UserManager.GetUserAsync(authState.User);
     }
 
     public async Task Create()
