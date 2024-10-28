@@ -5,7 +5,9 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Options
 @using blazorTickets.Data
+@using blazorTickets.Models
 @using blazorTickets.Services
 
 @inject UserManager<ApplicationUser> UserManager
@@ -15,7 +17,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
-
+@inject IOptions<TechnicianEmailSettings> technicians
 <PageTitle>Register</PageTitle>
 
 <h1>Register</h1>
@@ -73,7 +75,8 @@
             identityErrors = result.Errors;
             return;
         }
-        await UserManager.AddToRoleAsync(user, "Client");
+
+        await AssignRoles(user);
         Logger.LogInformation("User created a new account with password.");
 
         var userId = await UserManager.GetUserIdAsync(user);
@@ -94,6 +97,22 @@
 
         await SignInManager.SignInAsync(user, isPersistent: false);
         RedirectManager.RedirectTo(ReturnUrl);
+    }
+
+    private async Task AssignRoles(ApplicationUser user)
+    {
+        foreach (var technician in technicians.Value.Emails)
+        {
+            Console.WriteLine(technician);
+            if(user.Email == technician)
+            {
+                await UserManager.AddToRoleAsync(user, "Technician");
+            } 
+            else
+            {
+                await UserManager.AddToRoleAsync(user, "Client");
+            }
+        }
     }
 
     private ApplicationUser CreateUser()
