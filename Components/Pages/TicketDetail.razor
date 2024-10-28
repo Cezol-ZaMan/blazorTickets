@@ -1,7 +1,122 @@
 ﻿@page "/ticket-detail"
-<PageTitle>Ticket Detail</PageTitle>
-<h3>TicketDetail</h3>
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using System.Transactions;
+@using blazorTickets.Services
+@using blazorTickets.Models
+@using blazorTickets.Data
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ApplicationDbContext ctx
+@inject UserManager<ApplicationUser> UserManager
+@inject EmailSender EmailSender
+@inject ProtectedSessionStorage sessionStorage
+
+@attribute [Authorize(Roles = "Technician")]
+<h3>Ticket Detail</h3>
+
+@if (ticket != null)
+{
+    <EditForm Model="ticket" OnValidSubmit="CloseTicket">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <div class="form-group">
+            <label for="title">Title</label>
+            <InputText id="title" class="form-control" @bind-Value="ticket.Title" disabled />
+        </div>
+        <br />
+        <div class="form-group">
+            <label for="description">Description</label>
+            <InputTextArea id="description" class="form-control" @bind-Value="ticket.Description" disabled />
+        </div>
+        <br />
+        <div class="form-group">
+            <label for="severity">Severity</label>
+            <InputText id="severity" class="form-control" @bind-Value="ticket.Severity" disabled />
+        </div>
+        <br />
+        <div class="form-group">
+            <label for="resolutionMessage">Resolution Message</label>
+            <InputTextArea id="resolutionMessage" class="form-control" @bind-Value="resolutionMessage" required />
+        </div>
+        <br />
+        <button type="submit" class="btn btn-primary">Close Ticket</button>
+        <br />
+        <br />
+    </EditForm>
+}
+else
+{
+    <p>Loading ticket details...</p>
+}
 
 @code {
+    private Ticket? ticket;
+    private string resolutionMessage;
 
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await sessionStorage.GetAsync<Ticket>("ticketDetail");
+        if (result.Success)
+        {
+            ticket = result.Value;
+        }
+        else
+        {
+            ticket = null;
+        }
+        await sessionStorage.DeleteAsync("ticketDetails");
+    }
+
+    private async void CloseTicket()
+    {
+        if (ticket == null)
+        {
+            return;
+        }
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState == null)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        var user = authState?.User;
+        if (user == null || user.Identity == null || user.Identity.IsAuthenticated == false)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        var appUser = await UserManager.GetUserAsync(user);
+        if (appUser == null)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        if (ticket.IsClosed)
+        {
+            NavigationManager.NavigateTo("/processing");
+            return;
+        }
+        string emailTo = ticket.CreatedByName;
+        string message = $"<p>Ticket <b>{ticket.Id}</b> was resolved by {appUser.Email}.<p>" +
+                         $"<p><b>Title:</b><br/><i>{ticket.Title}</i></p>" +
+                         $"<p><b>Description:</b><br/><i>{ticket.Description}</i></p>" +
+                         $"<p><b>Resolution Message:</b><br/><i>{resolutionMessage}</i><p>";
+        await EmailSender.SendEmailAsync(emailTo, $"Ticket resolved.", message);
+
+        var dbTicket = await ctx.Tickets.FindAsync(ticket.Id);
+        if (dbTicket != null)
+        {
+            dbTicket.ResolvedByName = appUser.UserName;
+            dbTicket.ResolvedById = appUser.Id;
+            dbTicket.IsClosed = true;
+            dbTicket.ResolvedAt = DateTime.Now;
+            await ctx.SaveChangesAsync();
+        }
+        NavigationManager.NavigateTo("/processing");
+    }
 }
