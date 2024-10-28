@@ -57,7 +57,7 @@ namespace blazorTickets.Services
 
             ticket.IsClosed = false;
             ticket.CreatedById = appUser.Id;
-            ticket.CreatedByName = appUser.UserName;
+            ticket.CreatedByName = appUser.Email;
             ticket.CreatedAt = DateTime.Now;
 
            
