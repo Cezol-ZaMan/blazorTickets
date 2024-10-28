@@ -1,7 +1,98 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Mvc.RazorPages;
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.Extensions.Options
+@using blazorTickets.Data
+@using blazorTickets.Models
+@using blazorTickets.Services
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Authorization
+@using System.Transactions;
+@inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject ApplicationDbContext ctx
+@inject EmailSender EmailSender
+@inject IOptions<TechnicianEmailSettings> technicianEmails
+@inject TicketService TicketService
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Create Ticket</PageTitle>
 
-<h1>Hello, world!</h1>
+<EditForm method="post" Model="ticket" FormName="AddTicket" OnValidSubmit="Create">
+    <h3>Create a new ticket</h3>
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="align-content-center">
+        <label for="Title">Title:</label><br />
+        <input type="text" @bind="ticket.Title" /><br /><br />
+        <label for="Description">Description:</label><br />
+        <textarea @bind="ticket.Description" /><br /><br />
+        <label for="Severity">Severity</label><br />
+        <select @bind="ticket.Severity">
+            <option value="">Select the severity</option>
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="Critical">Critical</option>
+        </select><br /><br />
+        <button class="btn-primary" type="submit">Create</button>
+    </div>
+</EditForm>
 
-Welcome to your new app.
+<style>
+    input{
+        padding: 0.5rem;
+        border: solid 1px lightgrey;
+        outline: none;
+        width: 60%;
+    }
+    textarea{
+          padding: 0.5rem;
+          border: solid 1px lightgrey;
+          outline: none;
+          width: 60%;
+    }
+    select{
+          padding: 0.5rem;
+          border: solid 1px lightgrey;
+          outline: none;
+          width: 60%;
+    }
+    button{
+        width: 60%;
+    }
+</style>
+
+@code {
+    private Ticket ticket = new Ticket();
+    private ApplicationUser? User;
+
+    protected override async void OnInitialized()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (authState == null)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        var user = authState?.User;
+        if (user == null || user.Identity == null || user.Identity.IsAuthenticated == false)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        var appUser = await UserManager.GetUserAsync(user);
+        if (appUser == null)
+        {
+            NavigationManager.NavigateTo("/Account/Login");
+            return;
+        }
+        User = appUser;
+    }
+
+    public async Task Create()
+    {
+        await TicketService.AddTicket(ticket, User, ctx, technicianEmails, EmailSender);
+        NavigationManager.NavigateTo("/created-successfully");
+    }
+}

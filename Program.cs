@@ -36,6 +36,9 @@ var smtpSection = builder.Configuration.GetSection("Smtp") ?? throw new InvalidO
 builder.Services.Configure<SmtpSettings>(smtpSection);
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 
+var technicianSection = builder.Configuration.GetSection("Technicians") ?? throw new InvalidOperationException("Technician configuration section is missing");
+builder.Services.Configure<TechnicianEmailSettings>(technicianSection);
+builder.Services.AddScoped<TechnicianEmailSettings>();
 builder.Services.AddScoped<TicketService>();
 builder.Services.AddScoped<EmailSender>();
 
